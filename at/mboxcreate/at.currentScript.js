@@ -7462,7 +7462,7 @@ window.adobe.target.___bootstrap(window, document, {
     clientCode: 'mangoApp',
     imsOrgId: '',
     serverDomain: 'mangoApp.tt.omtrdc.net',
-    crossDomain: 'disabled',
+    crossDomain: 'enabled',
     timeout: 5000,
     globalMboxName: 'target-global-mbox',
     globalMboxAutoCreate: false,
