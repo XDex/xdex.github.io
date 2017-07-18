@@ -7473,9 +7473,11 @@ window.adobe.target.___bootstrap(window, document, {
     bodyHidingEnabled: true,
     deviceIdLifetime: 63244800000,
     sessionIdLifetime: 1860000,
-    pollingAfterDomReadyTimeout: 180000,
+    selectorsPollingTimeout: 5000,
     visitorApiTimeout: 500,
     overrideMboxEdgeServer: false,
     overrideMboxEdgeServerTimeout: 1860000,
-    optoutEnabled: false
+    optoutEnabled: false,
+    secureOnly: false,
+    supplementalDataIdParamTimeout: 30
 });
