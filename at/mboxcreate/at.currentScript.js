@@ -7458,4 +7458,24 @@ exports.target = target;
 
 }((window.adobe = window.adobe || {})));
 
-window.adobe.target.___bootstrap(window, document, {clientCode:'mangoApp',imsOrgId:'',serverDomain:'mangoApp.tt.omtrdc.net',crossDomain:'disabled',timeout:5000,globalMboxName:'target-global-mbox',globalMboxAutoCreate:false,version:'0.9.2',defaultContentHiddenStyle:'visibility:hidden;',defaultContentVisibleStyle:'visibility:visible;',bodyHiddenStyle:'body{opacity:0}',bodyHidingEnabled:true,deviceIdLifetime:63244800000,sessionIdLifetime:1860000,pollingAfterDomReadyTimeout:180000,visitorApiTimeout:500,overrideMboxEdgeServer:false,overrideMboxEdgeServerTimeout:1860000,optoutEnabled:false});
+window.adobe.target.___bootstrap(window, document, {
+    clientCode: 'mangoApp',
+    imsOrgId: '',
+    serverDomain: 'mangoApp.tt.omtrdc.net',
+    crossDomain: 'disabled',
+    timeout: 5000,
+    globalMboxName: 'target-global-mbox',
+    globalMboxAutoCreate: false,
+    version: '1.0.0',
+    defaultContentHiddenStyle: 'visibility:hidden;',
+    defaultContentVisibleStyle: 'visibility:visible;',
+    bodyHiddenStyle: 'body{opacity:0}',
+    bodyHidingEnabled: true,
+    deviceIdLifetime: 63244800000,
+    sessionIdLifetime: 1860000,
+    pollingAfterDomReadyTimeout: 180000,
+    visitorApiTimeout: 500,
+    overrideMboxEdgeServer: false,
+    overrideMboxEdgeServerTimeout: 1860000,
+    optoutEnabled: false
+});
