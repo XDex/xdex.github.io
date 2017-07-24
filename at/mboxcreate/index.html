@@ -8,16 +8,20 @@
         }
     </script>
     <script src="at.currentScript.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.9/angular.min.js"></script>
+    <script>
+        var myApp = angular.module('myApp',[]);
+        function MyCtrl($scope) {
+            $scope.name = 'Superhero';
+        }
+    </script>
 </head>
 
 <body>
-<div ng-app="">
- 
-<p>Input something in the input box:</p>
-<p>Name: <input type="text" ng-model="name"></p>
-<p ng-bind="name"></p>
-
+<div ng-app="myApp">
+<div ng-controller="MyCtrl">
+  Hello, {{name}}!
+</div>
 </div>
     <div class="mboxDefault">
         Default content
