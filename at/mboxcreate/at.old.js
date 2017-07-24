@@ -1,17 +1,11 @@
 /**
  * @license
- * at.js 1.1.0 | (c) Adobe Systems Incorporated | All rights reserved
+ * at.js 1.0.0 | (c) Adobe Systems Incorporated | All rights reserved
  * zepto.js | (c) 2010-2016 Thomas Fuchs | zeptojs.com/license
  * rx.js | (c) 2015-2016 Netflix, Inc., Microsoft Corp. and contributors | http://www.apache.org/licenses/LICENSE-2.0
  */
 (function (exports) {
 'use strict';
-
-if (!isStandardMode() || (window.targetGlobalSettings && window.targetGlobalSettings.enabled === false)) {
-  overridePublicApi();
-  return;
-}
-
 
 var consolePoly = function () {
   (function(undefined) {
@@ -250,8 +244,89 @@ var CustomEventPoly = function () {
     .call('object' === typeof window && window || 'object' === typeof self && self || {});
 };
 
+var currentScriptPoly = function () {
+  (function(undefined) {
+    if (!('document' in this && 'currentScript' in this.document)) {
+      (function () {
+        var scripts = document.getElementsByTagName("script");
+        scripts.find = function (callback) {
+          for (var i = 0; i < this.length; i++) {
+            if (callback(this[i])) {
+              return this[i];
+            }
+          }
+        };
+        scripts.last = function() {
+          return this[this.length - 1]
+        };
+        var loaded = Object.create(null);
+        function getInteractive() {
+          return scripts.find(function(script) {
+            return script.readyState === 'interactive';
+          });
+        }
+        function getStack() {
+          try {
+            throw new Error();
+          } catch (error) {
+            return error.stack;
+          }
+        }
+        function searchStack(stack, test) {
+          var url = /[^@\s\(]+$/gm;
+          var location = /(:\d+){1,2}\)?$/;
+          while (match = url.exec(stack)) {
+            var match = match.pop();
+            var index = match.search(location);
+            if (index < 0) {
+              continue;
+            }
+            var result = test(match.slice(0, index));
+            if (result) {
+              return result;
+            }
+          }
+        }
+        function isCurrent(source) {
+          if (source in loaded) {
+            return;
+          }
+          if (isInline(source)) {
+            return scripts.last();
+          }
+          return scripts.find(function(script) {
+            return script.src == source
+              || script.getAttribute("src") == source
+          });
+        }
+        function isInline(source) {
+          return document.readyState == "loading" && location.href == source;
+        }
+        document.addEventListener("load", function(event) {
+          var target = event.target;
+          if (target.nodeName.toLowerCase() === "script") {
+            var source = target.src;
+            if (source) {
+              loaded[source] = null;
+            }
+          }
+        },  true);
+        Object.defineProperty(Document.prototype, "currentScript", {
+          get: function() {
+            return getInteractive() || searchStack(getStack(), isCurrent) || null;
+          },
+          enumerable: true,
+          configurable: true
+        });
+      }());
+    }
+  })
+    .call('object' === typeof window && window || 'object' === typeof self && self || {});
+};
+
 var initPolyfills = function () {
     CustomEventPoly();
+    currentScriptPoly();
 };
 
 var WINDOW;
@@ -1647,15 +1722,15 @@ var index = (function(window) {
         , dataType: dataType
       }
     }
-    $.get = function(                                  ){
+    $.get = function(/* url, data, success, dataType */){
       return $.ajax(parseArguments.apply(null, arguments))
     };
-    $.post = function(                                  ){
+    $.post = function(/* url, data, success, dataType */){
       var options = parseArguments.apply(null, arguments);
       options.type = 'POST';
       return $.ajax(options)
     };
-    $.getJSON = function(                        ){
+    $.getJSON = function(/* url, data, success */){
       var options = parseArguments.apply(null, arguments);
       options.dataType = 'json';
       return $.ajax(options)
@@ -1958,11 +2033,8 @@ function parserForArrayFormat(opts) {
 			return function (key, value, accumulator) {
 				result = /(\[\])$/.exec(key);
 				key = key.replace(/\[\]$/, '');
-				if (!result) {
+				if (!result || accumulator[key] === undefined) {
 					accumulator[key] = value;
-					return;
-				} else if (accumulator[key] === undefined) {
-					accumulator[key] = [value];
 					return;
 				}
 				accumulator[key] = [].concat(accumulator[key], value);
@@ -2168,6 +2240,13 @@ function isDeliveryDisabled() {
     var cookie = getCookie(DISABLE_COOKIE);
     var params = parse(LOCATION.search);
     return isNotBlank(cookie) || isNotBlank(params[DISABLE_PARAM]);
+}
+function isStandardMode() {
+    var compatMode = DOCUMENT.compatMode;
+    var documentMode = DOCUMENT.documentMode;
+    var standardMode = compatMode && compatMode === 'CSS1Compat';
+    var ie9OrModernBrowser = documentMode ? documentMode >= 9 : true;
+    return standardMode && ie9OrModernBrowser;
 }
 function isDeliveryEnabled() {
     return ENABLED && isCookieEnabled() && !isDeliveryDisabled();
@@ -2591,7 +2670,7 @@ var Subscription = (function () {
                     subscription.unsubscribe();
                     return subscription;
                 }
-                else if (typeof subscription._addParent !== 'function'                  ) {
+                else if (typeof subscription._addParent !== 'function' /* quack quack */) {
                     var tmp = subscription;
                     subscription = new Subscription();
                     subscription._subscriptions = [tmp];
@@ -3040,10 +3119,6 @@ function isCorsSupported() {
     return XHR in WINDOW && WITH_CREDENTIALS in new WINDOW[XHR]();
 }
 function decorateOptions(options) {
-    if (options.dataType === SCRIPT$1) {
-        options.cache = true;
-        return options;
-    }
     if (options.dataType !== JSON$1) {
         return options;
     }
@@ -3701,7 +3776,7 @@ var _throw$2 = {
 
 var Observable_1$9 = Observable_1;
 var throw_1 = _throw$2;
-Observable_1$9.Observable['throw'] = throw_1._throw;
+Observable_1$9.Observable.throw = throw_1._throw;
 
 var __extends$9 = (commonjsGlobal && commonjsGlobal.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -4262,7 +4337,7 @@ function createError$2() {
     return { status: ERROR, error: OPTOUT };
 }
 function wrapVisitorOrThrow(visitor, optout) {
-    return optout ? Observable_2['throw'](createError$2()) : Observable_2.of(visitor);
+    return optout ? Observable_2.throw(createError$2()) : Observable_2.of(visitor);
 }
 function getSupplementalDataId(visitor, mbox) {
     if (!isFunction(visitor[SUPPLEMENTAL_DATA_ID_METHOD])) {
@@ -4608,7 +4683,7 @@ function saveTrace(response) {
 function handleError$1(response) {
     var error = response.error;
     if (isNotBlank(error)) {
-        return Observable_2['throw'](createError$1(ERROR, error));
+        return Observable_2.throw(createError$1(ERROR, error));
     }
     return Observable_2.of(response);
 }
@@ -4632,7 +4707,7 @@ function handleDisabled(response) {
     var disabled = response.disabled;
     if (isObject(disabled)) {
         saveDisabledData(disabled);
-        return Observable_2['throw'](createError$1(DISABLED, getDisabledMessage(disabled)));
+        return Observable_2.throw(createError$1(DISABLED, getDisabledMessage(disabled)));
     }
     return Observable_2.of(response);
 }
@@ -5155,26 +5230,13 @@ function getActions(request, offers) {
     }, offers);
     return result.concat(createHtml(offers));
 }
-function getResponseTokens(offers) {
-    var result = [];
-    forEach(function (offer) {
-        var tokens = offer.responseTokens;
-        if (!isObject(tokens)) {
-            return;
-        }
-        result.push(tokens);
-    }, offers);
-    return result;
-}
 function handleOffers(request, response) {
     var offers = response.offers;
     if (!isArray(offers)) {
-        return Observable_2.of({ actions: [], responseTokens: [] });
+        return Observable_2.of([]);
     }
     var actions = getActions(request, offers);
-    var responseTokens = getResponseTokens(offers);
-    return Observable_2.forkJoin.apply(Observable_2, actions).map(flatten)
-        .map(function (actions) { return ({ actions: actions, responseTokens: responseTokens }); });
+    return Observable_2.forkJoin.apply(Observable_2, actions).map(flatten);
 }
 
 var __extends$15 = (commonjsGlobal && commonjsGlobal.__extends) || function (d, b) {
@@ -5345,16 +5407,11 @@ var REQUEST_FAILED$1 = 'at-request-failed';
 var CONTENT_RENDERING_SUCCEEDED = 'at-content-rendering-succeeded';
 var CONTENT_RENDERING_FAILED = 'at-content-rendering-failed';
 function notifyRequestSucceeded(detail) {
-    var responseTokens = detail.responseTokens;
-    var payload = {
+    fireCustomEvent(REQUEST_SUCCEEDED, {
         type: REQUEST_SUCCEEDED,
         mbox: detail.mbox,
         tracking: createTracking()
-    };
-    if (!isEmptyArray(responseTokens)) {
-        payload.responseTokens = responseTokens;
-    }
-    fireCustomEvent(REQUEST_SUCCEEDED, payload);
+    });
 }
 function notifyRequestFailed(detail) {
     fireCustomEvent(REQUEST_FAILED$1, {
@@ -5382,21 +5439,17 @@ function notifyRenderingFailed(detail) {
 }
 
 var GET_OFFER = '[getOffer()]';
-function handleSuccess(options, response) {
-    var mbox = options.mbox;
-    var actions = response.actions;
-    var responseTokens = response.responseTokens;
+function handleSuccess(options, actions) {
     logDebug(GET_OFFER, ACTIONS_TO_BE_RENDERED, actions);
     options.success(actions);
-    notifyRequestSucceeded({ mbox: mbox, responseTokens: responseTokens });
+    notifyRequestSucceeded({ mbox: options.mbox });
 }
 function handleError(options, error) {
-    var mbox = options.mbox;
     var status = error.status || UNKNOWN;
     var message = getMessage(error);
     logWarn(GET_OFFER, REQUEST_FAILED, error);
     options.error(status, message);
-    notifyRequestFailed({ mbox: mbox, message: message });
+    notifyRequestFailed({ mbox: options.mbox, message: message });
 }
 function createTargetRequest(options) {
     var result = {};
@@ -5892,7 +5945,7 @@ var Notification = (function () {
             case 'N':
                 return Observable_1$20.Observable.of(this.value);
             case 'E':
-                return Observable_1$20.Observable['throw'](this.error);
+                return Observable_1$20.Observable.throw(this.error);
             case 'C':
                 return Observable_1$20.Observable.empty();
         }
@@ -7104,87 +7157,9 @@ function renderMbox(mbox, params, element, successFunc, errorFunc) {
     getOffer(options);
 }
 
-var scripts;
-var loaded;
-function getInteractive() {
-    return scripts.find(function (script) {
-        return script.readyState === 'interactive';
-    });
-}
-function getStack() {
-    try {
-        throw new Error();
-    }
-    catch (error) {
-        return error.stack;
-    }
-}
-function searchStack(stack, test) {
-    var url = /[^@\s\(]+$/gm;
-    var location = /(:\d+){1,2}\)?$/;
-    var match;
-    while (match = url.exec(stack)) {
-        match = match.pop();
-        var index = match.search(location);
-        if (index < 0) {
-            continue;
-        }
-        var result = test(match.slice(0, index));
-        if (result) {
-            return result;
-        }
-    }
-}
-function isCurrent(source) {
-    if (source in loaded) {
-        return;
-    }
-    if (isInline(source)) {
-        return scripts.last();
-    }
-    return scripts.find(function (script) {
-        return script.src === source
-            || script.getAttribute('src') === source;
-    });
-}
-function isInline(source) {
-    return document.readyState === 'loading' && location.href === source;
-}
-function initializeCurrentScript() {
-    if (!('currentScript' in DOCUMENT)) {
-        scripts = DOCUMENT.getElementsByTagName('script');
-        scripts.find = function (callback) {
-            for (var i = 0; i < this.length; i++) {
-                if (callback(this[i])) {
-                    return this[i];
-                }
-            }
-        };
-        scripts.last = function () {
-            return this[this.length - 1];
-        };
-        loaded = Object.create(null);
-        DOCUMENT.addEventListener('load', function (event) {
-            var target = event.target;
-            if (target.nodeName.toLowerCase() === 'script') {
-                var source = target.src;
-                if (source) {
-                    loaded[source] = null;
-                }
-            }
-        }, true);
-    }
-}
-function getCurrentScript() {
-    if ('currentScript' in DOCUMENT) {
-        return DOCUMENT.currentScript;
-    }
-    return getInteractive() || searchStack(getStack(), isCurrent) || null;
-}
-
 var MBOX_CREATE = '[mboxCreate()]';
 function getMboxDiv(mbox) {
-    var scriptElement = getCurrentScript();
+    var scriptElement = DOCUMENT.currentScript;
     if (!isElement(scriptElement)) {
         logWarn(MBOX_CREATE, CURRENT_SCRIPT_MISSING);
         return null;
@@ -7384,36 +7359,21 @@ function overrideSettingsIfRequired(settings, targetGlobalSettings) {
         setFromGlobalSettings(settings, targetGlobalSettings, 'supplementalDataIdParamTimeout');
     }
 }
-function isStandardMode() {
-    var doc = document;
-    var compatMode = doc.compatMode;
-    var documentMode = doc.documentMode;
-    var standardMode = compatMode && compatMode === 'CSS1Compat';
-    var ie9OrModernBrowser = documentMode ? documentMode >= 9 : true;
-    return standardMode && ie9OrModernBrowser;
-}
 function initGlobalSettings(settings) {
     settings.cookieDomain = getCookieDomain(LOCATION.hostname);
     settings.enabled = isStandardMode();
     overrideSettingsIfRequired(settings, WINDOW.targetGlobalSettings || {});
 }
 
-function overridePublicApi() {
-    var win = window;
-    win.adobe = {
-        target: {
-            VERSION: '',
-            event: {},
-            ___bootstrap: noop,
-            getOffer: noop,
-            applyOffer: noop,
-            trackEvent: noop,
-            registerExtension: noop
-        }
-    };
+function overridePublicApi(win) {
+    win.adobe.target.getOffer = noop;
+    win.adobe.target.applyOffer = noop;
+    win.adobe.target.trackEvent = noop;
+    win.adobe.target.registerExtension = noop;
     win.mboxCreate = noop;
     win.mboxDefine = noop;
     win.mboxUpdate = noop;
+    logWarn(DELIVERY_DISABLED_NONSTANDARD);
 }
 function bootstrap(win, doc, targetSettings) {
     consolePoly();
@@ -7432,12 +7392,10 @@ function bootstrap(win, doc, targetSettings) {
         CONTENT_RENDERING_FAILED: CONTENT_RENDERING_FAILED
     };
     if (!targetSettings.enabled) {
-        overridePublicApi();
-        logWarn(DELIVERY_DISABLED_NONSTANDARD);
+        overridePublicApi(win);
         return;
     }
     initPolyfills();
-    initializeCurrentScript();
     addMboxesStyles();
     executeAuthoringCode();
     executeGlobalMbox();
@@ -7457,7 +7415,6 @@ var target = {
 exports.target = target;
 
 }((window.adobe = window.adobe || {})));
-
 window.adobe.target.___bootstrap(window, document, {
     clientCode: 'mangoApp',
     imsOrgId: '',
@@ -7466,7 +7423,7 @@ window.adobe.target.___bootstrap(window, document, {
     timeout: 5000,
     globalMboxName: 'target-global-mbox',
     globalMboxAutoCreate: false,
-    version: '1.1.0',
+    version: '1.0.0',
     defaultContentHiddenStyle: 'visibility:hidden;',
     defaultContentVisibleStyle: 'visibility:visible;',
     bodyHiddenStyle: 'body{opacity:0}',
