@@ -9,20 +9,18 @@
     </script>
     <script src="at.old.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.9/angular.min.js"></script>
-    <script>
+</head>
+
+<body ng-app="myApp">
+    <div ng-controller="MyCtrl">
+        Hello, {{name}}!
+    </div>
+    <script type="text/javascript">
         var myApp = angular.module('myApp',[]);
         function MyCtrl($scope) {
             $scope.name = 'Superhero';
         }
     </script>
-</head>
-
-<body>
-<div ng-app="myApp">
-<div ng-controller="MyCtrl">
-  Hello, {{name}}!
-</div>
-</div>
     <div class="mboxDefault">
         Default content
     </div>
