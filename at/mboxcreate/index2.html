@@ -15,7 +15,10 @@
     <div ng-controller="MyCtrl">
         Hello, {{name}}!
     </div>
-    <script type="text/javascript">
+    <script>
+        if ('console' in window) {
+            console.log(document.currentScript);
+        }
         var myApp = angular.module('myApp',[]);
         myApp.controller('MyCtrl', function($scope) {
             $scope.name = 'Superhero';
