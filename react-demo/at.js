@@ -1,4 +1,4 @@
-window.adobe.targetGlobalSettings = {
+window.targetGlobalSettings = {
     cookieDomain: "xdex.github.io"
 };
 /**
